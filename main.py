@@ -283,28 +283,40 @@ def main(USER):
         def add_friend():
             popup = customtkinter.CTkFrame(window, width=800, height=400, fg_color="#515151", corner_radius=20, border_width=5, border_color="gray10")
             popup.place(relx=0.6, rely=0.5, anchor="center")
+            title = customtkinter.CTkLabel(popup, text="Username", font=("Arial", 30), fg_color="#515151", text_color=("gray10", "gray90"))
+            title.place(relx=0.5, rely=0.1, anchor="center")
             username = customtkinter.CTkEntry(popup, width=600, height=40, font=("Arial", 20), text_color=("gray10", "gray90"), fg_color="#434343")
             username.place(relx=0.5, rely=0.3, anchor="center")
             def add_friend_to_db(username):
-                ref = db.reference("users/" + USER.name + "/requests-out")
-                friends = ref.get()
-
-                if friends == "":
-                    friends = []
-                if username in friends:
+                ref = db.reference("users/" + username)
+                if ref.get() == None:
+                    pop2 = customtkinter.CTkFrame(popup, width=400, height=200, fg_color="#515151",
+                                                    corner_radius=20, border_width=5, border_color="gray10")
+                    pop2.place(relx=0.5, rely=0.5, anchor="center")
+                    customtkinter.CTkLabel(pop2, text="User does not exist", font=("Arial", 20), fg_color="#515151", text_color=("gray10", "gray90")).place(relx=0.5, rely=0.3, anchor="center")
+                    customtkinter.CTkButton(pop2, text="OK", command=lambda: pop2.destroy()).place(relx=0.5, rely=0.7,
+                                                                                                   anchor="center")
                     return
-                friends.append(username)
-                ref.set(friends)
+                else:
+                    ref = db.reference("users/" + USER.name + "/requests-out")
+                    friends = ref.get()
 
-                ref = db.reference("users/" + username + "/requests-in")
-                _friends = ref.get()
-                if _friends == "":
-                    _friends = []
-                _friends.append(USER.name)
-                ref.set(_friends)
+                    if friends == "":
+                        friends = []
+                    if username in friends:
+                        return
+                    friends.append(username)
+                    ref.set(friends)
 
-                popup.destroy()
-                display_friends()
+                    ref = db.reference("users/" + username + "/requests-in")
+                    _friends = ref.get()
+                    if _friends == "":
+                        _friends = []
+                    _friends.append(USER.name)
+                    ref.set(_friends)
+
+                    popup.destroy()
+                    display_friends()
 
             add = customtkinter.CTkButton(popup, corner_radius=10, height=40, border_spacing=10, text="Add", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), command=lambda: add_friend_to_db(username.get()))
             add.place(relx=0.5, rely=0.5, anchor="center")
@@ -631,9 +643,53 @@ def main(USER):
         serverFrameList.add_item(customtkinter.CTkButton(serverFrameList, corner_radius=0, height=40, border_spacing=10, text=server, fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), anchor="w"))
 
     def add_server():
-        pass
+        popup = customtkinter.CTkFrame(window, width=800, height=400, fg_color="#515151", corner_radius=20,
+                                       border_width=5, border_color="gray10")
+        popup.place(relx=0.6, rely=0.5, anchor="center")
+        title = customtkinter.CTkLabel(popup, text="Server Invite Code", font=("Arial", 20))
+        title.place(relx=0.5, rely=0.1, anchor="center")
+        username = customtkinter.CTkEntry(popup, width=600, height=40, font=("Arial", 20),
+                                          text_color=("gray10", "gray90"), fg_color="#434343")
+        username.place(relx=0.5, rely=0.3, anchor="center")
 
-    serverFrameList.add_item(customtkinter.CTkButton(serverFrameList, corner_radius=0, height=40, border_spacing=10, text="Add Server", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), anchor="w", command=add_server))
+        def add_server_to_db(server):
+            ref = db.reference("servers")
+            servers = ref.get()
+            if servers == "":
+                servers = {}
+            inviteCodes = {}
+            inviteCodesInverse = {}
+            for _server in list(servers.keys()):
+                inviteCodes.update({_server: servers[_server]["inviteCode"]})
+                inviteCodesInverse.update({servers[_server]["inviteCode"]: _server})
+            if server not in list(inviteCodes.values()):
+                # The Server Does Not Exist
+                pop2 = customtkinter.CTkFrame(popup, width=400, height=200, fg_color="#515151", corner_radius=20,
+                                                border_width=5, border_color="gray10")
+                pop2.place(relx=0.5, rely=0.5, anchor="center")
+                customtkinter.CTkLabel(pop2, text="Server Does Not Exist", font=("Arial", 20)).place(relx=0.5, rely=0.3, anchor="center")
+                customtkinter.CTkButton(pop2, text="OK", command=lambda: pop2.destroy()).place(relx=0.5, rely=0.7, anchor="center")
+            else:
+                # The Server Exists
+                ref = db.reference("users/" + USER.name + "/servers")
+                servers = ref.get()
+                if servers == "":
+                    servers = []
+                servers.append(inviteCodesInverse[server])
+                ref.set(servers)
+                popup.destroy()
+                main(USER)
+
+        add = customtkinter.CTkButton(popup, corner_radius=10, height=40, border_spacing=10, text="Add",
+                                      text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                      command=lambda: add_server_to_db(username.get()))
+        add.place(relx=0.5, rely=0.5, anchor="center")
+        cancel = customtkinter.CTkButton(popup, corner_radius=10, height=40, border_spacing=10, text="Cancel",
+                                         text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                         command=lambda: popup.destroy())
+        cancel.place(relx=0.5, rely=0.7, anchor="center")
+
+    serverFrameList.add_item(customtkinter.CTkButton(serverFrameList, corner_radius=0, height=40, border_spacing=10, text="Add Server", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), anchor="w"), _command=add_server)
     serverFrameList.place(relx=0.065, rely=0.5, anchor="center")
 
 
