@@ -575,12 +575,8 @@ def main(USER):
                 return datetime.datetime.strptime(x['sentAt'], "%Y-%m-%d %H:%M:%S")
             _messages.sort(key=lambda x: sort_by_time(x))
             for message in _messages:
-                if message["sender"] == USER.name:
-                    messagesFrameList.add_label(customtkinter.CTkLabel(messagesFrameList, text=message["sender"], height=40, font=("Arial", 25, "bold"), fg_color="transparent", text_color=("gray10", "gray90"), anchor="w"))
-                    messagesFrameList.add_label(customtkinter.CTkLabel(messagesFrameList, text=message["contents"], height=40, font=("Arial", 20), fg_color="transparent", text_color=("gray10", "gray90"), anchor="w"))
-                else:
-                    messagesFrameList.add_label(customtkinter.CTkLabel(messagesFrameList, text=message["sender"], height=40, font=("Arial", 25, "bold"), fg_color="transparent", text_color=("gray10", "gray90"), anchor="e"))
-                    messagesFrameList.add_label(customtkinter.CTkLabel(messagesFrameList, text=message["contents"], height=40, font=("Arial", 20), fg_color="transparent", text_color=("gray10", "gray90"), anchor="e"))
+                messagesFrameList.add_label(customtkinter.CTkLabel(messagesFrameList, text=message["sender"], height=40, font=("Arial", 25, "bold"), fg_color="transparent", text_color=("gray10", "gray90"), anchor="w"))
+                messagesFrameList.add_label(customtkinter.CTkLabel(messagesFrameList, text=message["contents"], height=40, font=("Arial", 20), fg_color="transparent", text_color=("gray10", "gray90"), anchor="w"))
 
             messageEntry = customtkinter.CTkEntry(window, width=1100, height=40, font=("Arial", 20),
                                                   fg_color="transparent", text_color=("gray10", "gray90"))
@@ -625,15 +621,51 @@ def main(USER):
         messagesFrameList.place(relx=0.62, rely=0.45, anchor="center")
 
         channelFrameList = ScrollableLabelButtonFrame(window, command=view_channel, width=200, corner_radius=0, height=800, fg_color="#2b2b2b")
+        def settings(_server):
+            pass
 
+        channelFrameList.add_item(customtkinter.CTkButton(channelFrameList, corner_radius=0, height=40, border_spacing=10, text="Server Settings", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), anchor="w"), _command=lambda: settings(server))
         for channel in channelNames:
-            print(channel)
             channelFrameList.add_item(
                 customtkinter.CTkButton(channelFrameList, corner_radius=0, height=40, border_spacing=10, text=channel,
                                         fg_color="transparent", text_color=("gray10", "gray90"),
                                         hover_color=("gray70", "gray30"), anchor="w"))
 
+        def add_channel(server):
+
+            def _add_channel(name, _server):
+                ref = db.reference("servers/" + _server + "/channels/" + name)
+                ref.set({"messages":""})
+                view_server(_server)
+
+            popup = customtkinter.CTkFrame(window, width=800, height=400, fg_color="#515151", corner_radius=20,
+                                           border_width=5, border_color="gray10")
+            popup.place(relx=0.6, rely=0.5, anchor="center")
+            title = customtkinter.CTkLabel(popup, text="Channel Name", font=("Arial", 20))
+            title.place(relx=0.5, rely=0.1, anchor="center")
+            username = customtkinter.CTkEntry(popup, width=600, height=40, font=("Arial", 20),
+                                              text_color=("gray10", "gray90"), fg_color="#434343")
+            username.place(relx=0.5, rely=0.3, anchor="center")
+
+
+            add = customtkinter.CTkButton(popup, corner_radius=10, height=40, border_spacing=10, text="Add",
+                                          text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                          command=lambda: _add_channel(username.get(), server))
+            add.place(relx=0.5, rely=0.5, anchor="center")
+            cancel = customtkinter.CTkButton(popup, corner_radius=10, height=40, border_spacing=10, text="Cancel",
+                                             text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                             command=lambda: popup.destroy())
+            cancel.place(relx=0.5, rely=0.7, anchor="center")
+
+
+        channelFrameList.add_item(customtkinter.CTkButton(channelFrameList, corner_radius=0, height=40, border_spacing=10, text="Add Channel", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), anchor="w"), _command=lambda: add_channel(server))
+
+
         channelFrameList.place(relx=0.2, rely=0.5, anchor="center")
+        try:
+            view_channel(channelNames[0])
+        except:
+            pass
 
 
     serverFrameList = ScrollableLabelButtonFrame(window, command=view_server, width=200, corner_radius=0, height=800, fg_color="transparent")
