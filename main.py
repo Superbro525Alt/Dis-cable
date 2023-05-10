@@ -654,8 +654,11 @@ def main(USER):
                 msgs = ref.get()
                 if msgs == "":
                     msgs = []
-                if len(msgs) > len(_messages):
-                    view_channel(channel, _wait=False)
+                try:
+                    if len(msgs) > len(_messages):
+                        view_channel(channel, _wait=False)
+                except TypeError:
+                    pass
 
                 window.after(2000, wait_for_message)
 
