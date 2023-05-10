@@ -17,6 +17,7 @@ import screeninfo
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
+
 def get_path():
     """Get path to executing file even if it is frozen."""
     if getattr(sys, 'frozen', False):
@@ -49,6 +50,34 @@ CLEAR_ON_LOAD = []
 
 global PAGE
 PAGE = "LOGIN"
+
+
+class RepeatedTimer(object):
+    def __init__(self, interval, function, *args, **kwargs):
+        self._timer = None
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.is_running = False
+        self.start()
+
+    def _run(self):
+        self.is_running = False
+        self.start()
+        self.function(*self.args, **self.kwargs)
+
+    def start(self):
+        if not self.is_running:
+            self._timer = threading.Timer(self.interval, self._run)
+            self._timer.start()
+            self.is_running = True
+
+    def stop(self):
+        self._timer.cancel()
+        self.is_running = False
+
+
 class User:
     def __init__(self, name=None, password=None, remember=None):
             self.name = name
@@ -135,6 +164,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
 def clear_window():
     for widget in window.winfo_children():
         widget.destroy()
+
 def main(USER):
     clear_window()
     window.title("Dis-cable")
@@ -225,30 +255,6 @@ def main(USER):
                 load_messages(user)
                 ref.set(False)
 
-        class RepeatedTimer(object):
-            def __init__(self, interval, function, *args, **kwargs):
-                self._timer = None
-                self.interval = interval
-                self.function = function
-                self.args = args
-                self.kwargs = kwargs
-                self.is_running = False
-                self.start()
-
-            def _run(self):
-                self.is_running = False
-                self.start()
-                self.function(*self.args, **self.kwargs)
-
-            def start(self):
-                if not self.is_running:
-                    self._timer = threading.Timer(self.interval, self._run)
-                    self._timer.start()
-                    self.is_running = True
-
-            def stop(self):
-                self._timer.cancel()
-                self.is_running = False
 
         rt = RepeatedTimer(1, wait_for_message)
 
@@ -543,7 +549,7 @@ def main(USER):
         ref = db.reference("servers/" + server + "/channels")
         channels = ref.get()
         channelNames = list(channels.keys())
-        def view_channel(channel):
+        def view_channel(channel, _wait=True):
             for child in messagesFrameList.winfo_children():
                 child.destroy()
             messagesFrameList.button_list.clear()
@@ -590,6 +596,20 @@ def main(USER):
             sendButton.place(relx=0.98, rely=0.975, anchor="center")
 
             window.bind("<Return>", lambda event: send_message(messageEntry.get()))
+
+            def wait_for_message():
+                ref = db.reference("servers/" + server + "/channels/" + channel + "/messages")
+                msgs = ref.get()
+                if msgs == "":
+                    msgs = []
+                if len(msgs) > len(_messages):
+                    view_channel(channel, _wait=False)
+
+                window.after(2000, wait_for_message)
+
+            if _wait:
+                wait_for_message()
+
         messagesFrameList.place(relx=0.62, rely=0.45, anchor="center")
 
         channelFrameList = ScrollableLabelButtonFrame(window, command=view_channel, width=200, corner_radius=0, height=800, fg_color="#2b2b2b")
