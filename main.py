@@ -555,6 +555,12 @@ def main(USER):
                 widget.destroy()
             except ValueError:
                 pass
+
+        ref = db.reference("servers/" + server + "/owner")
+        if ref.get() == USER.name:
+            ADMIN = True
+        else:
+            ADMIN = False
         CLEAR_ON_LOAD.clear()
         usersFrameList.destroy()
         messagesFrameList = ScrollableLabelButtonFrame(window, width=1200, corner_radius=0, height=700, fg_color="#2b2b2b")
@@ -623,8 +629,9 @@ def main(USER):
         channelFrameList = ScrollableLabelButtonFrame(window, command=view_channel, width=200, corner_radius=0, height=800, fg_color="#2b2b2b")
         def settings(_server):
             pass
-
-        channelFrameList.add_item(customtkinter.CTkButton(channelFrameList, corner_radius=0, height=40, border_spacing=10, text="Server Settings", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), anchor="w"), _command=lambda: settings(server))
+        
+        if ADMIN:
+            channelFrameList.add_item(customtkinter.CTkButton(channelFrameList, corner_radius=0, height=40, border_spacing=10, text="Server Settings", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), anchor="w"), _command=lambda: settings(server))
         for channel in channelNames:
             channelFrameList.add_item(
                 customtkinter.CTkButton(channelFrameList, corner_radius=0, height=40, border_spacing=10, text=channel,
@@ -634,9 +641,10 @@ def main(USER):
         def add_channel(server):
 
             def _add_channel(name, _server):
-                ref = db.reference("servers/" + _server + "/channels/" + name)
-                ref.set({"messages":""})
-                view_server(_server)
+                if name != "":
+                    ref = db.reference("servers/" + _server + "/channels/" + name)
+                    ref.set({"messages":""})
+                    view_server(_server)
 
             popup = customtkinter.CTkFrame(window, width=800, height=400, fg_color="#515151", corner_radius=20,
                                            border_width=5, border_color="gray10")
@@ -657,8 +665,8 @@ def main(USER):
                                              command=lambda: popup.destroy())
             cancel.place(relx=0.5, rely=0.7, anchor="center")
 
-
-        channelFrameList.add_item(customtkinter.CTkButton(channelFrameList, corner_radius=0, height=40, border_spacing=10, text="Add Channel", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), anchor="w"), _command=lambda: add_channel(server))
+        if ADMIN:
+            channelFrameList.add_item(customtkinter.CTkButton(channelFrameList, corner_radius=0, height=40, border_spacing=10, text="Add Channel", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"), anchor="w"), _command=lambda: add_channel(server))
 
 
         channelFrameList.place(relx=0.2, rely=0.5, anchor="center")
